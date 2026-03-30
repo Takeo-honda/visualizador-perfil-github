@@ -1,42 +1,36 @@
-const btnSearch = document.getElementById('btn-search');
-const inputSearch = document.getElementById('input-search');
-const profileResults = document.querySelector('.profile-results');
+import { fetchGithubUser } from './githubApi.js';
+import { elements, showLoading, renderProfile, showError, clearInput } from './ui.js';
 
-const baseUrl = 'https://api.github.com';
+async function searchHandler() {
+  const username = elements.inputSearch.value.trim();
 
-btnSearch.addEventListener('click', async () => {
-    const username = inputSearch.value;
-    if (username) {
-        try {
-            profileResults.innerHTML = '<p class="loading-message">Carregando dados do usuário...</p>';
-            
-            const response = await fetch(`${baseUrl}/users/${username}`)
-            // Aqui você pode adicionar a lógica para buscar o perfil do GitHub usando o valor de searchTerm
-            if (!response.ok) {
-                profileResults.innerHTML = '';
-                alert('Usuário não encontrado. Por favor, verifique o nome de usuário e tente novamente.');
-                return;
-            }
-        const userData = await response.json();
-        console.log(userData);
+  if (!username) {
+    showError('Por favor, digite um usuário do GitHub.');
+    return;
+  }
 
-        profileResults.innerHTML = `
-        <div class="profile-card">
-        
-            <img src="${userData.avatar_url}" alt="Avatar de ${userData.name}" class="profile-avatar">
-            <div class="profile-info">
-                <h2>${userData.name}</h2>
-                <p>${userData.bio || 'Nao possui bio cadastrada 🥲 '}</p>
-            </div>
-                
-            </div>`;
-        
-        
-        
-    } catch (error) {
-            console.error('Erro ao buscar perfil do GitHub:', error);
-            alert('Ocorreu um erro ao buscar o perfil. Por favor, tente novamente.');
-        }
+  try {
+    showLoading();
+    const userData = await fetchGithubUser(username);
+    renderProfile(userData);
+    clearInput();
+  } catch (error) {
+    console.error('Erro ao buscar perfil do GitHub:', error);
+    if (error.status === 404) {
+      showError('Usuário não encontrado. Por favor, verifique o nome de usuário e tente novamente.');
+    } else {
+      showError('Ocorreu um erro ao buscar o perfil. Por favor, tente novamente.');
     }
-});
+  }
+}
 
+function init() {
+  elements.btnSearch.addEventListener('click', searchHandler);
+  elements.inputSearch.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      searchHandler();
+    }
+  });
+}
+
+init();
