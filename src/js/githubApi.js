@@ -1,18 +1,17 @@
 const BASE_URL = 'https://api.github.com';
 
-export async function fetchGithubUser(username) {
-  if (!username) {
-    throw new Error('Nome de usuário não pode ser vazio.');
-  }
-
-  const response = await fetch(`${BASE_URL}/users/${encodeURIComponent(username)}`);
-
+export async function fetchGithubUser(userName) {
+  const response = await fetch(`${BASE_URL}/users/${userName}`);
   if (!response.ok) {
-    const message = response.status === 404 ? 'Usuário não encontrado.' : 'Erro na API do GitHub.';
-    const error = new Error(message);
-    error.status = response.status;
-    throw error;
+    throw new Error('Usuário não encontrado.');
   }
+  return await response.json();
+}
 
-  return response.json();
+export async function fetchGithubUserRepos(userName) {
+    const response = await fetch(`${BASE_URL}/users/${userName}/repos?per_page=10&sort=created`);
+    if (!response.ok) {
+        throw new Error('Repositórios não encontrados.');
+    }
+    return await response.json();
 }

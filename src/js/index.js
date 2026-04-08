@@ -1,36 +1,33 @@
-import { fetchGithubUser } from './githubApi.js';
-import { elements, showLoading, renderProfile, showError, clearInput } from './ui.js';
+import { fetchGithubUser, fetchGithubUserRepos } from './githubApi.js';
+import { renderProfile } from './profileView.js';
 
-async function searchHandler() {
-  const username = elements.inputSearch.value.trim();
+const inputSearch = document.getElementById('input-search');
+const btnSearch = document.getElementById('btn-search');
+const profileResults = document.querySelector('.profile-results');
 
-  if (!username) {
-    showError('Por favor, digite um usuário do GitHub.');
-    return;
-  }
-
-  try {
-    showLoading();
-    const userData = await fetchGithubUser(username);
-    renderProfile(userData);
-    clearInput();
-  } catch (error) {
-    console.error('Erro ao buscar perfil do GitHub:', error);
-    if (error.status === 404) {
-      showError('Usuário não encontrado. Por favor, verifique o nome de usuário e tente novamente.');
-    } else {
-      showError('Ocorreu um erro ao buscar o perfil. Por favor, tente novamente.');
+async function getUserProfile() {
+    const userName = inputSearch.value;
+    if (!userName) {
+        alert('Por favor, digite um nome de usuário do GitHub.');
+        profileResults.innerHTML = "";
+        return;
     }
-  }
+    profileResults.innerHTML = `<p class="loading">Carregando...</p>`;
+    try {
+        const userData = await fetchGithubUser(userName);
+        const userRepos = await fetchGithubUserRepos(userName);
+        renderProfile(userData, userRepos, profileResults);
+    } catch (error) {
+        console.error('Erro ao buscar o perfil do usuário:', error);
+        alert('Usuário não encontrado. Por favor, verifique o nome de usuário e tente novamente.');
+        profileResults.innerHTML = "";
+    }
 }
 
-function init() {
-  elements.btnSearch.addEventListener('click', searchHandler);
-  elements.inputSearch.addEventListener('keydown', (event) => {
+btnSearch.addEventListener('click', getUserProfile);
+
+inputSearch.addEventListener('keyup', (event) => {
     if (event.key === 'Enter') {
-      searchHandler();
+        getUserProfile();
     }
-  });
-}
-
-init();
+});
